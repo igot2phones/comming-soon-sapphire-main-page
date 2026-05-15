@@ -1,0 +1,10 @@
+# Copy to `.dev.vars` for `wrangler dev`. Real values live in Cloudflare
+# (set with `wrangler secret put` or the dashboard) and are NEVER committed.
+
+# Cloudflare Turnstile (https://dash.cloudflare.com/?to=/:account/turnstile)
+# Server-side secret used to verify the visitor's challenge response.
+TURNSTILE_SECRET_KEY=
+
+# Comma-separated list of origins allowed to call /api/subscribe.
+# Example for production: https://example.pages.dev,https://sapphireservers.com
+ALLOWED_ORIGIN=http://localhost:5173

@@ -4,4 +4,37 @@
   "compatibility_date": "2025-09-24",
   "compatibility_flags": ["nodejs_compat"],
   "main": "src/server.ts",
+
+  // Non-secret config. Secrets (TURNSTILE_SECRET_KEY) are set with
+  // `wrangler secret put` and never committed.
+  "vars": {
+    // Comma-separated allow-list of origins permitted to call /api/subscribe.
+    // Override per-environment in the Cloudflare dashboard for production.
+    "ALLOWED_ORIGIN": "http://localhost:5173"
+  },
+
+  // Cloudflare D1: subscriber storage. The website never reads from this —
+  // export rows with `wrangler d1 execute <DB_NAME> --remote --command "SELECT ..."`.
+  // One-time setup:
+  //   wrangler d1 create igot2phones-newsletter
+  // then paste the returned database_id below.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "igot2phones-newsletter",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  // Cloudflare KV: per-IP rate limiting for /api/subscribe.
+  // One-time setup:
+  //   wrangler kv namespace create RATELIMIT
+  // then paste the returned id below.
+  "kv_namespaces": [
+    {
+      "binding": "RATELIMIT",
+      "id": "REPLACE_WITH_KV_NAMESPACE_ID"
+    }
+  ]
 }
