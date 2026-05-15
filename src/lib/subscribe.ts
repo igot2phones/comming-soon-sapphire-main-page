@@ -99,8 +99,9 @@ async function verifyTurnstile(token: string, secret: string, ip: string): Promi
 }
 
 async function checkRateLimit(kv: KVNamespace, ip: string): Promise<boolean> {
-  if (ip === "unknown") return true; // Fail open if no IP — Turnstile still guards.
-  const key = `rl:${ip}`;
+  // If we cannot identify the caller, bucket them all together under a
+  // single shared key so missing-IP doesn't become a way to bypass limits.
+  const key = `rl:${ip === "unknown" ? "_unknown" : ip}`;
   const current = await kv.get(key);
   const count = current ? Number.parseInt(current, 10) || 0 : 0;
   if (count >= RATE_LIMIT_MAX) return false;
