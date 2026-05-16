@@ -211,7 +211,7 @@ function ComingSoon() {
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[34rem] w-[34rem] rounded-full bg-[radial-gradient(circle,oklch(0.6_0.22_255/0.2),transparent_70%)] blur-3xl" />
         </div>
 
-        <div className="relative max-w-2xl">
+        <div className="relative max-w-2xl sm:max-w-3xl">
           <p className="animate-fade-in text-[10px] sm:text-xs uppercase tracking-[0.5em] text-muted-foreground/70">
             Stay in the loop
           </p>
@@ -222,8 +222,25 @@ function ComingSoon() {
             Join the waitlist and we'll let you know the moment Sapphire Servers goes live.
           </p>
 
-          <div className="mt-12 animate-fade-up delay-500 w-full flex justify-center">
+          <div className="mt-12 animate-fade-up delay-500 w-full flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:justify-center">
             <NewsletterForm />
+            <a
+              href="https://discord.gg/ZpuHG457RB"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Join the Discord"
+              className="group inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.03] px-6 py-3 text-sm font-light text-foreground/90 backdrop-blur-xl transition hover:border-sapphire-glow/60 hover:bg-sapphire-glow/10 hover:text-foreground active:scale-[0.98] sm:my-1.5"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                className="h-4 w-4 text-foreground/70 transition-colors duration-300 group-hover:text-sapphire-glow"
+                fill="currentColor"
+              >
+                <path d="M20.317 4.369A19.79 19.79 0 0 0 16.558 3.2a.075.075 0 0 0-.079.037c-.34.6-.717 1.382-.98 1.999a18.27 18.27 0 0 0-5.487 0 12.65 12.65 0 0 0-.995-2 .078.078 0 0 0-.079-.036A19.736 19.736 0 0 0 5.18 4.369a.07.07 0 0 0-.032.027C1.533 9.79.51 15.063.999 20.27a.082.082 0 0 0 .031.056 19.9 19.9 0 0 0 5.993 3.029.078.078 0 0 0 .084-.028 14.21 14.21 0 0 0 1.226-1.994.076.076 0 0 0-.041-.105 13.114 13.114 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.371-.291a.075.075 0 0 1 .077-.01c3.927 1.793 8.18 1.793 12.061 0a.075.075 0 0 1 .078.009c.12.099.245.198.372.292a.077.077 0 0 1-.006.128 12.3 12.3 0 0 1-1.873.891.077.077 0 0 0-.041.106c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-6.022-.838-11.252-3.549-15.873a.061.061 0 0 0-.031-.028zM8.02 17.1c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.094 2.157 2.42 0 1.333-.955 2.418-2.157 2.418zm7.974 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.094 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
+              </svg>
+              Join the Discord
+            </a>
           </div>
         </div>
       </section>
