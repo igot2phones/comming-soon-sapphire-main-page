@@ -22,7 +22,7 @@
     {
       "binding": "DB",
       "database_name": "igot2phones-newsletter",
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "database_id": "9f5b28a4-fe5f-428f-88f1-c8073c25c094",
       "migrations_dir": "migrations"
     }
   ],
@@ -34,7 +34,7 @@
   "kv_namespaces": [
     {
       "binding": "RATELIMIT",
-      "id": "REPLACE_WITH_KV_NAMESPACE_ID"
+      "id": "a36cc7dd000144a086e64a4eddc4914f"
     }
   ]
 }
