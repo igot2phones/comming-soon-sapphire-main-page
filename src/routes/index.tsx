@@ -98,11 +98,11 @@ function ComingSoon() {
           <div className="mt-14 animate-fade-up delay-500">
             <button
               onClick={scrollToNewsletter}
-              aria-label="Scroll to learn more"
+              aria-label="Sign up for the newsletter"
               className="group inline-flex items-center gap-5 text-left"
             >
               <span className="text-[10px] uppercase tracking-[0.55em] text-muted-foreground/70 group-hover:text-foreground transition-colors duration-500">
-                Scroll
+                Sign up for the newsletter
               </span>
               <span className="relative h-px w-20 overflow-hidden bg-white/10">
                 <span className="absolute inset-y-0 left-0 w-full bg-gradient-to-r from-transparent via-sapphire-glow to-transparent animate-scroll-line" />
@@ -202,45 +202,140 @@ function ComingSoon() {
         </div>
       </section>
 
-      {/* NEWSLETTER */}
+      {/* NEWSLETTER + DISCORD */}
       <section
         id="newsletter"
-        className="snap-section relative z-10 w-full min-h-screen px-6 sm:px-10 lg:px-16 py-32 flex flex-col items-center justify-center text-center"
+        className="snap-section relative z-10 w-full min-h-screen px-6 sm:px-10 lg:px-16 py-32 flex flex-col items-center justify-center"
       >
         <div aria-hidden className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[34rem] w-[34rem] rounded-full bg-[radial-gradient(circle,oklch(0.6_0.22_255/0.2),transparent_70%)] blur-3xl" />
+          <div className="absolute left-1/3 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[34rem] w-[34rem] rounded-full bg-[radial-gradient(circle,oklch(0.6_0.22_255/0.2),transparent_70%)] blur-3xl" />
+          <div className="absolute right-1/4 top-1/2 -translate-y-1/2 h-[28rem] w-[28rem] rounded-full bg-[radial-gradient(circle,oklch(0.55_0.2_280/0.18),transparent_70%)] blur-3xl" />
         </div>
 
-        <div className="relative max-w-2xl sm:max-w-3xl">
-          <p className="animate-fade-in text-[10px] sm:text-xs uppercase tracking-[0.5em] text-muted-foreground/70">
-            Stay in the loop
-          </p>
-          <h2 className="animate-fade-up delay-200 mt-6 text-3xl sm:text-4xl md:text-5xl font-light tracking-tight text-foreground/95">
-            Be the first to know.
-          </h2>
-          <p className="animate-fade-up delay-300 mt-6 text-sm sm:text-base text-muted-foreground font-light leading-relaxed">
-            Join the waitlist and we'll let you know the moment Sapphire Servers goes live.
-          </p>
+        <div className="relative w-full max-w-6xl">
+          <div className="text-center">
+            <p className="animate-fade-in text-[10px] sm:text-xs uppercase tracking-[0.5em] text-muted-foreground/70">
+              Stay in the loop
+            </p>
+            <h2 className="animate-fade-up delay-200 mt-6 text-3xl sm:text-4xl md:text-5xl font-light tracking-tight text-foreground/95">
+              Be the first to know.
+            </h2>
+            <p className="animate-fade-up delay-300 mt-6 text-sm sm:text-base text-muted-foreground font-light leading-relaxed max-w-2xl mx-auto">
+              Join the waitlist and we'll let you know the moment Sapphire Servers goes live.
+            </p>
+          </div>
 
-          <div className="mt-12 animate-fade-up delay-500 w-full flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:justify-center">
-            <NewsletterForm />
-            <a
-              href="https://discord.gg/ZpuHG457RB"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Join the Discord"
-              className="group inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.03] px-6 py-3 text-sm font-light text-foreground/90 backdrop-blur-xl transition hover:border-sapphire-glow/60 hover:bg-sapphire-glow/10 hover:text-foreground active:scale-[0.98] sm:my-1.5"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-                className="h-4 w-4 text-foreground/70 transition-colors duration-300 group-hover:text-sapphire-glow"
-                fill="currentColor"
-              >
-                <path d="M20.317 4.369A19.79 19.79 0 0 0 16.558 3.2a.075.075 0 0 0-.079.037c-.34.6-.717 1.382-.98 1.999a18.27 18.27 0 0 0-5.487 0 12.65 12.65 0 0 0-.995-2 .078.078 0 0 0-.079-.036A19.736 19.736 0 0 0 5.18 4.369a.07.07 0 0 0-.032.027C1.533 9.79.51 15.063.999 20.27a.082.082 0 0 0 .031.056 19.9 19.9 0 0 0 5.993 3.029.078.078 0 0 0 .084-.028 14.21 14.21 0 0 0 1.226-1.994.076.076 0 0 0-.041-.105 13.114 13.114 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.371-.291a.075.075 0 0 1 .077-.01c3.927 1.793 8.18 1.793 12.061 0a.075.075 0 0 1 .078.009c.12.099.245.198.372.292a.077.077 0 0 1-.006.128 12.3 12.3 0 0 1-1.873.891.077.077 0 0 0-.041.106c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-6.022-.838-11.252-3.549-15.873a.061.061 0 0 0-.031-.028zM8.02 17.1c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.094 2.157 2.42 0 1.333-.955 2.418-2.157 2.418zm7.974 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.094 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
-              </svg>
-              Join the Discord
-            </a>
+          <div className="mt-16 grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-stretch">
+            {/* Newsletter card */}
+            <div className="animate-fade-up delay-500 group relative flex flex-col rounded-2xl border border-white/10 bg-white/[0.02] p-8 sm:p-10 backdrop-blur-xl transition hover:border-white/20">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04]">
+                  <svg
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.25"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4 text-foreground/80"
+                  >
+                    <path d="M4 6h16v12H4z" />
+                    <path d="m4 7 8 6 8-6" />
+                  </svg>
+                </span>
+                <p className="text-[10px] sm:text-xs uppercase tracking-[0.4em] text-muted-foreground/70">
+                  Newsletter
+                </p>
+              </div>
+
+              <h3 className="mt-6 text-2xl sm:text-3xl font-light tracking-tight text-foreground/95">
+                Get launch updates by <span className="text-sapphire-glow font-extralight italic">email.</span>
+              </h3>
+              <p className="mt-4 text-sm text-muted-foreground/85 font-light leading-relaxed">
+                One quiet email when we go live — no spam, no noise. Just the news you've been waiting for.
+              </p>
+
+              <div className="mt-8 flex justify-center lg:justify-start">
+                <NewsletterForm />
+              </div>
+            </div>
+
+            {/* Discord card */}
+            <div className="animate-fade-up delay-500 group relative flex flex-col rounded-2xl border border-white/10 bg-gradient-to-br from-[#5865F2]/[0.08] via-white/[0.02] to-sapphire-glow/[0.06] p-8 sm:p-10 backdrop-blur-xl transition hover:border-sapphire-glow/40">
+              <div aria-hidden className="pointer-events-none absolute -top-20 -right-20 h-60 w-60 rounded-full bg-[radial-gradient(circle,#5865F2/0.25,transparent_70%)] blur-3xl opacity-60" />
+
+              <div className="relative flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full border border-[#5865F2]/30 bg-[#5865F2]/15">
+                  <svg
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                    className="h-4 w-4 text-[#a5acff]"
+                    fill="currentColor"
+                  >
+                    <path d="M20.317 4.369A19.79 19.79 0 0 0 16.558 3.2a.075.075 0 0 0-.079.037c-.34.6-.717 1.382-.98 1.999a18.27 18.27 0 0 0-5.487 0 12.65 12.65 0 0 0-.995-2 .078.078 0 0 0-.079-.036A19.736 19.736 0 0 0 5.18 4.369a.07.07 0 0 0-.032.027C1.533 9.79.51 15.063.999 20.27a.082.082 0 0 0 .031.056 19.9 19.9 0 0 0 5.993 3.029.078.078 0 0 0 .084-.028 14.21 14.21 0 0 0 1.226-1.994.076.076 0 0 0-.041-.105 13.114 13.114 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.371-.291a.075.075 0 0 1 .077-.01c3.927 1.793 8.18 1.793 12.061 0a.075.075 0 0 1 .078.009c.12.099.245.198.372.292a.077.077 0 0 1-.006.128 12.3 12.3 0 0 1-1.873.891.077.077 0 0 0-.041.106c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-6.022-.838-11.252-3.549-15.873a.061.061 0 0 0-.031-.028zM8.02 17.1c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.094 2.157 2.42 0 1.333-.955 2.418-2.157 2.418zm7.974 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.094 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
+                  </svg>
+                </span>
+                <p className="text-[10px] sm:text-xs uppercase tracking-[0.4em] text-muted-foreground/70">
+                  Community
+                </p>
+              </div>
+
+              <h3 className="relative mt-6 text-2xl sm:text-3xl font-light tracking-tight text-foreground/95">
+                Join us on <span className="text-[#a5acff] font-extralight italic">Discord.</span>
+              </h3>
+              <p className="relative mt-4 text-sm text-muted-foreground/85 font-light leading-relaxed">
+                Hang out with the team, get behind-the-scenes peeks, and shape Sapphire Servers as we build it.
+              </p>
+
+              <ul className="relative mt-6 space-y-2.5 text-sm text-muted-foreground/80 font-light">
+                <li className="flex items-center gap-3">
+                  <span className="h-1 w-1 rounded-full bg-[#a5acff]" />
+                  Early sneak peeks &amp; announcements
+                </li>
+                <li className="flex items-center gap-3">
+                  <span className="h-1 w-1 rounded-full bg-[#a5acff]" />
+                  Direct chat with the team
+                </li>
+                <li className="flex items-center gap-3">
+                  <span className="h-1 w-1 rounded-full bg-[#a5acff]" />
+                  Share feedback &amp; feature ideas
+                </li>
+              </ul>
+
+              <div className="relative mt-auto pt-8">
+                <a
+                  href="https://discord.gg/ZpuHG457RB"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Join the Sapphire Servers Discord"
+                  className="group/btn inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-[#5865F2] px-6 py-3.5 text-sm font-medium text-white shadow-[0_8px_30px_-10px_rgba(88,101,242,0.6)] transition hover:bg-[#4752c4] hover:shadow-[0_10px_40px_-8px_rgba(88,101,242,0.7)] active:scale-[0.98] sm:w-auto sm:min-w-[16rem]"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                    className="h-4 w-4"
+                    fill="currentColor"
+                  >
+                    <path d="M20.317 4.369A19.79 19.79 0 0 0 16.558 3.2a.075.075 0 0 0-.079.037c-.34.6-.717 1.382-.98 1.999a18.27 18.27 0 0 0-5.487 0 12.65 12.65 0 0 0-.995-2 .078.078 0 0 0-.079-.036A19.736 19.736 0 0 0 5.18 4.369a.07.07 0 0 0-.032.027C1.533 9.79.51 15.063.999 20.27a.082.082 0 0 0 .031.056 19.9 19.9 0 0 0 5.993 3.029.078.078 0 0 0 .084-.028 14.21 14.21 0 0 0 1.226-1.994.076.076 0 0 0-.041-.105 13.114 13.114 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.371-.291a.075.075 0 0 1 .077-.01c3.927 1.793 8.18 1.793 12.061 0a.075.075 0 0 1 .078.009c.12.099.245.198.372.292a.077.077 0 0 1-.006.128 12.3 12.3 0 0 1-1.873.891.077.077 0 0 0-.041.106c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-6.022-.838-11.252-3.549-15.873a.061.061 0 0 0-.031-.028zM8.02 17.1c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.094 2.157 2.42 0 1.333-.955 2.418-2.157 2.418zm7.974 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.094 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
+                  </svg>
+                  Join the Discord
+                  <svg
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-3.5 w-3.5 -mr-0.5 transition-transform duration-300 group-hover/btn:translate-x-0.5"
+                  >
+                    <path d="M5 12h14" />
+                    <path d="m12 5 7 7-7 7" />
+                  </svg>
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       </section>
