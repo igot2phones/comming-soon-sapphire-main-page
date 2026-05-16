@@ -45,7 +45,7 @@ const MAX_BODY_BYTES = 2048;
 const RATE_LIMIT_MAX = 5;
 const RATE_LIMIT_WINDOW_SECONDS = 60 * 60;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-let subscribersSchemaReady: Promise<void> | null = null;
+let isSubscribersSchemaReady = false;
 
 function json(body: Record<string, unknown>, status: number, corsOrigin: string | null): Response {
   const headers: Record<string, string> = {
@@ -113,26 +113,16 @@ async function checkRateLimit(kv: KVNamespace, ip: string): Promise<boolean> {
 }
 
 async function ensureSubscribersSchema(db: D1Database): Promise<void> {
-  if (!subscribersSchemaReady) {
-    subscribersSchemaReady = (async () => {
-      await db
-        .prepare(
-          "CREATE TABLE IF NOT EXISTS subscribers (email TEXT PRIMARY KEY, created_at INTEGER NOT NULL)",
-        )
-        .run();
-      await db
-        .prepare(
-          "CREATE INDEX IF NOT EXISTS idx_subscribers_created_at ON subscribers (created_at)",
-        )
-        .run();
-    })();
-  }
-  try {
-    await subscribersSchemaReady;
-  } catch (error) {
-    subscribersSchemaReady = null;
-    throw error;
-  }
+  if (isSubscribersSchemaReady) return;
+  await db
+    .prepare(
+      "CREATE TABLE IF NOT EXISTS subscribers (email TEXT PRIMARY KEY, created_at INTEGER NOT NULL)",
+    )
+    .run();
+  await db
+    .prepare("CREATE INDEX IF NOT EXISTS idx_subscribers_created_at ON subscribers (created_at)")
+    .run();
+  isSubscribersSchemaReady = true;
 }
 
 export async function handleSubscribe(request: Request, env: SubscribeEnv): Promise<Response> {
