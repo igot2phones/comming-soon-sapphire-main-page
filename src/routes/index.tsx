@@ -291,7 +291,7 @@ function ComingSoon() {
               <ul className="relative mt-6 space-y-2.5 text-sm text-muted-foreground/80 font-light">
                 <li className="flex items-center gap-3">
                   <span className="h-1 w-1 rounded-full bg-[#a5acff]" />
-                  Early sneak peeks &amp; announcements
+                  Early sneak peeks & announcements
                 </li>
                 <li className="flex items-center gap-3">
                   <span className="h-1 w-1 rounded-full bg-[#a5acff]" />
@@ -299,7 +299,7 @@ function ComingSoon() {
                 </li>
                 <li className="flex items-center gap-3">
                   <span className="h-1 w-1 rounded-full bg-[#a5acff]" />
-                  Share feedback &amp; feature ideas
+                  Share feedback & feature ideas
                 </li>
               </ul>
 
