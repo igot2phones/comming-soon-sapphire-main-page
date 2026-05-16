@@ -45,6 +45,7 @@ const MAX_BODY_BYTES = 2048;
 const RATE_LIMIT_MAX = 5;
 const RATE_LIMIT_WINDOW_SECONDS = 60 * 60;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+let subscribersSchemaReady: Promise<void> | null = null;
 
 function json(body: Record<string, unknown>, status: number, corsOrigin: string | null): Response {
   const headers: Record<string, string> = {
@@ -109,6 +110,29 @@ async function checkRateLimit(kv: KVNamespace, ip: string): Promise<boolean> {
     expirationTtl: RATE_LIMIT_WINDOW_SECONDS,
   });
   return true;
+}
+
+async function ensureSubscribersSchema(db: D1Database): Promise<void> {
+  if (!subscribersSchemaReady) {
+    subscribersSchemaReady = (async () => {
+      await db
+        .prepare(
+          "CREATE TABLE IF NOT EXISTS subscribers (email TEXT PRIMARY KEY, created_at INTEGER NOT NULL)",
+        )
+        .run();
+      await db
+        .prepare(
+          "CREATE INDEX IF NOT EXISTS idx_subscribers_created_at ON subscribers (created_at)",
+        )
+        .run();
+    })();
+  }
+  try {
+    await subscribersSchemaReady;
+  } catch (error) {
+    subscribersSchemaReady = null;
+    throw error;
+  }
 }
 
 export async function handleSubscribe(request: Request, env: SubscribeEnv): Promise<Response> {
@@ -207,6 +231,7 @@ export async function handleSubscribe(request: Request, env: SubscribeEnv): Prom
   // INSERT OR IGNORE: duplicates succeed silently. This prevents an attacker
   // from learning whether a given address is already subscribed.
   try {
+    await ensureSubscribersSchema(env.DB);
     await env.DB.prepare("INSERT OR IGNORE INTO subscribers (email, created_at) VALUES (?, ?)")
       .bind(email, Math.floor(Date.now() / 1000))
       .run();
