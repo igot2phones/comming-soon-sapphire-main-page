@@ -5,7 +5,7 @@
   "compatibility_flags": ["nodejs_compat"],
   "main": "src/server.ts",
 
-  // Non-secret config. Secrets (TURNSTILE_SECRET_KEY) are set with
+  // Non-secret config. Secrets (RECAPTCHA_SECRET_KEY) are set with
   // `wrangler secret put` and never committed.
   "vars": {
     // Comma-separated allow-list for extra origins permitted to call /api/subscribe.

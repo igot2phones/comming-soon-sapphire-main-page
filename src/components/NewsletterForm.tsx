@@ -1,48 +1,49 @@
 import { useEffect, useRef, useState } from "react";
 
-const TURNSTILE_SCRIPT_SRC =
-  "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+const RECAPTCHA_SCRIPT_SRC = "https://www.google.com/recaptcha/api.js?render=explicit";
 
-type TurnstileOptions = {
+type RecaptchaOptions = {
   sitekey: string;
   callback: (token: string) => void;
   "error-callback"?: () => void;
   "expired-callback"?: () => void;
-  theme?: "light" | "dark" | "auto";
-  size?: "normal" | "compact" | "flexible";
+  theme?: "light" | "dark";
+  size?: "normal" | "compact" | "invisible";
 };
 
 declare global {
   interface Window {
-    turnstile?: {
-      render: (element: string | HTMLElement, options: TurnstileOptions) => string;
-      reset: (widgetId?: string) => void;
-      remove: (widgetId: string) => void;
+    grecaptcha?: {
+      render: (element: string | HTMLElement, options: RecaptchaOptions) => number;
+      reset: (widgetId?: number) => void;
+      ready?: (cb: () => void) => void;
     };
   }
 }
 
-const SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined;
+const SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY as string | undefined;
 
-function loadTurnstileScript(): Promise<void> {
+function loadRecaptchaScript(): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
-  if (window.turnstile) return Promise.resolve();
+  if (window.grecaptcha && typeof window.grecaptcha.render === "function") {
+    return Promise.resolve();
+  }
   const existing = document.querySelector<HTMLScriptElement>(
-    `script[src="${TURNSTILE_SCRIPT_SRC}"]`,
+    `script[src="${RECAPTCHA_SCRIPT_SRC}"]`,
   );
   if (existing) {
     return new Promise((resolve) => {
       existing.addEventListener("load", () => resolve(), { once: true });
-      if (window.turnstile) resolve();
+      if (window.grecaptcha && typeof window.grecaptcha.render === "function") resolve();
     });
   }
   return new Promise((resolve, reject) => {
     const script = document.createElement("script");
-    script.src = TURNSTILE_SCRIPT_SRC;
+    script.src = RECAPTCHA_SCRIPT_SRC;
     script.async = true;
     script.defer = true;
     script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Failed to load Turnstile"));
+    script.onerror = () => reject(new Error("Failed to load reCAPTCHA"));
     document.head.appendChild(script);
   });
 }
@@ -55,35 +56,43 @@ export function NewsletterForm() {
   const [widgetFailed, setWidgetFailed] = useState(false);
   const tokenRef = useRef<string>("");
   const widgetContainerRef = useRef<HTMLDivElement | null>(null);
-  const widgetIdRef = useRef<string | null>(null);
+  const widgetIdRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!SITE_KEY) return; // Local dev without Turnstile configured.
+    if (!SITE_KEY) return; // Local dev without reCAPTCHA configured.
     let cancelled = false;
-    loadTurnstileScript()
+    loadRecaptchaScript()
       .then(() => {
-        if (cancelled || !widgetContainerRef.current || !window.turnstile) {
-          if (!cancelled && !window.turnstile) setWidgetFailed(true);
+        if (cancelled || !widgetContainerRef.current || !window.grecaptcha) {
+          if (!cancelled && !window.grecaptcha) setWidgetFailed(true);
           return;
         }
-        try {
-          widgetIdRef.current = window.turnstile.render(widgetContainerRef.current, {
-            sitekey: SITE_KEY,
-            theme: "dark",
-            size: "normal",
-            callback: (token: string) => {
-              tokenRef.current = token;
-            },
-            "expired-callback": () => {
-              tokenRef.current = "";
-            },
-            "error-callback": () => {
-              tokenRef.current = "";
-              setWidgetFailed(true);
-            },
-          });
-        } catch {
-          setWidgetFailed(true);
+        const doRender = () => {
+          if (cancelled || !widgetContainerRef.current || !window.grecaptcha) return;
+          try {
+            widgetIdRef.current = window.grecaptcha.render(widgetContainerRef.current, {
+              sitekey: SITE_KEY,
+              theme: "dark",
+              size: "normal",
+              callback: (token: string) => {
+                tokenRef.current = token;
+              },
+              "expired-callback": () => {
+                tokenRef.current = "";
+              },
+              "error-callback": () => {
+                tokenRef.current = "";
+                setWidgetFailed(true);
+              },
+            });
+          } catch {
+            setWidgetFailed(true);
+          }
+        };
+        if (typeof window.grecaptcha.ready === "function") {
+          window.grecaptcha.ready(doRender);
+        } else {
+          doRender();
         }
       })
       .catch(() => {
@@ -91,9 +100,10 @@ export function NewsletterForm() {
       });
     return () => {
       cancelled = true;
-      if (widgetIdRef.current && window.turnstile) {
+      // reCAPTCHA has no "remove" API; reset clears any pending token.
+      if (widgetIdRef.current !== null && window.grecaptcha) {
         try {
-          window.turnstile.remove(widgetIdRef.current);
+          window.grecaptcha.reset(widgetIdRef.current);
         } catch {
           /* ignore */
         }
@@ -104,9 +114,9 @@ export function NewsletterForm() {
 
   const resetWidget = () => {
     tokenRef.current = "";
-    if (widgetIdRef.current && window.turnstile) {
+    if (widgetIdRef.current !== null && window.grecaptcha) {
       try {
-        window.turnstile.reset(widgetIdRef.current);
+        window.grecaptcha.reset(widgetIdRef.current);
       } catch {
         /* ignore */
       }
@@ -150,7 +160,7 @@ export function NewsletterForm() {
         body: JSON.stringify({
           email: trimmed,
           website: honeypot,
-          "cf-turnstile-response": tokenRef.current,
+          "g-recaptcha-response": tokenRef.current,
         }),
       });
       const data = (await res.json().catch(() => ({}))) as {
@@ -227,7 +237,7 @@ export function NewsletterForm() {
       {SITE_KEY && (
         <div
           ref={widgetContainerRef}
-          className="flex min-h-[65px] justify-center"
+          className="flex min-h-[78px] justify-center"
           aria-label="Verification challenge"
         />
       )}
