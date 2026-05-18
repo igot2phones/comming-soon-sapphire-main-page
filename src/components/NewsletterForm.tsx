@@ -97,7 +97,25 @@ export function NewsletterForm() {
     tokenRef.current = "";
     if (widgetIdRef.current && window.turnstile) {
       try {
-        window.turnstile.reset(widgetIdRef.current);
+        window.turnstile.remove(widgetIdRef.current);
+        widgetIdRef.current = null;
+        // Re-render the widget fresh
+        if (widgetContainerRef.current) {
+          widgetIdRef.current = window.turnstile.render(widgetContainerRef.current, {
+            sitekey: SITE_KEY,
+            theme: "dark",
+            size: "flexible",
+            callback: (token: string) => {
+              tokenRef.current = token;
+            },
+            "expired-callback": () => {
+              tokenRef.current = "";
+            },
+            "error-callback": () => {
+              tokenRef.current = "";
+            },
+          });
+        }
       } catch {
         /* ignore */
       }
