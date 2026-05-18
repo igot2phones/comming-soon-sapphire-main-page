@@ -9,7 +9,7 @@
  * execute --remote` from an authenticated Cloudflare account.
  *
  * Abuse mitigations applied here:
- *  - Cloudflare Turnstile token verified server-side.
+ *  - Google reCAPTCHA v2 token verified server-side.
  *  - Per-IP rate limit in KV (5 requests / hour).
  *  - Same-origin checks plus CORS allow-list driven by ALLOWED_ORIGIN.
  *  - Honeypot field.
@@ -38,7 +38,7 @@ interface KVNamespace {
 export interface SubscribeEnv {
   DB?: D1Database;
   RATELIMIT?: KVNamespace;
-  TURNSTILE_SECRET_KEY?: string;
+  RECAPTCHA_SECRET_KEY?: string;
   ALLOWED_ORIGIN?: string;
 }
 
@@ -84,13 +84,13 @@ function getClientIp(request: Request): string {
   );
 }
 
-async function verifyTurnstile(token: string, secret: string, ip: string): Promise<boolean> {
+async function verifyRecaptcha(token: string, secret: string, ip: string): Promise<boolean> {
   try {
     const form = new FormData();
     form.append("secret", secret);
     form.append("response", token);
     if (ip && ip !== "unknown") form.append("remoteip", ip);
-    const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+    const res = await fetch("https://www.google.com/recaptcha/api/siteverify", {
       method: "POST",
       body: form,
     });
@@ -218,17 +218,17 @@ export async function handleSubscribe(request: Request, env: SubscribeEnv): Prom
     }
   }
 
-  // Turnstile verification. Required in production; skipped only if the
+  // reCAPTCHA v2 verification. Required in production; skipped only if the
   // secret is unset (local dev convenience).
-  if (env.TURNSTILE_SECRET_KEY) {
+  if (env.RECAPTCHA_SECRET_KEY) {
     const token =
-      typeof body["cf-turnstile-response"] === "string"
-        ? (body["cf-turnstile-response"] as string)
+      typeof body["g-recaptcha-response"] === "string"
+        ? (body["g-recaptcha-response"] as string)
         : "";
     if (!token) {
       return json({ ok: false, error: "captcha_required" }, 400, corsOrigin);
     }
-    const ok = await verifyTurnstile(token, env.TURNSTILE_SECRET_KEY, ip);
+    const ok = await verifyRecaptcha(token, env.RECAPTCHA_SECRET_KEY, ip);
     if (!ok) {
       return json({ ok: false, error: "captcha_failed" }, 400, corsOrigin);
     }
