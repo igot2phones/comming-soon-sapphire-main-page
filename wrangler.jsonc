@@ -5,8 +5,8 @@
   "compatibility_flags": ["nodejs_compat"],
   "main": "src/server.ts",
 
-  // Non-secret config. Secrets (RECAPTCHA_SECRET_KEY) are set with
-  // `wrangler secret put` and never committed.
+  // Non-secret config. Secrets are set with `wrangler secret put`
+  // and never committed.
   "vars": {
     // Comma-separated allow-list for extra origins permitted to call /api/subscribe.
     // The Worker's own origin is always accepted.

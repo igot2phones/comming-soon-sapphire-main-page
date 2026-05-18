@@ -28,7 +28,6 @@ Properties:
 - Subscriber data is **retrieved exclusively via `wrangler`** authenticated
   against your Cloudflare account.
 - Abuse mitigations on `POST /api/subscribe`:
-  - Google **reCAPTCHA v2** (server-verified)
   - Per-IP **rate limit** (5/hour) via Cloudflare KV
   - Same-origin requests plus an optional **CORS** allow-list
     (`ALLOWED_ORIGIN`) for any extra origins
@@ -55,14 +54,6 @@ bunx wrangler kv namespace create RATELIMIT
 
 # 4. Apply the schema to the remote D1 database
 bunx wrangler d1 migrations apply igot2phones-newsletter --remote
-
-# 5. Get a reCAPTCHA v2 site/secret key pair (free):
-#      https://www.google.com/recaptcha/admin
-#    - VITE_RECAPTCHA_SITE_KEY is public (build-time, exposed in JS).
-#    - RECAPTCHA_SECRET_KEY is private (server-side only).
-
-# 6. Set production secrets on the Worker
-bunx wrangler secret put RECAPTCHA_SECRET_KEY
 ```
 
 In Cloudflare, make sure the deployed Worker/Pages project has these runtime
@@ -72,8 +63,6 @@ bindings and variables:
   `igot2phones-newsletter`.
 - **KV binding** named exactly `RATELIMIT`, connected to the namespace you
   created above.
-- **Build env var** `VITE_RECAPTCHA_SITE_KEY` — your reCAPTCHA v2 site key.
-- **Secret** `RECAPTCHA_SECRET_KEY` — your reCAPTCHA v2 secret key.
 - **Runtime var** `ALLOWED_ORIGIN` — only needed for extra origins that are
   not the same origin as the deployed site. If you set it, use a
   comma-separated list such as
@@ -87,12 +76,8 @@ return `server_misconfigured` and no email can be inserted.
 
 ```bash
 cp .dev.vars.example .dev.vars         # fill in secrets for `wrangler dev`
-cp .env.example .env                   # fill in VITE_RECAPTCHA_SITE_KEY
 bun run dev                            # or: npm run dev
 ```
-
-If `RECAPTCHA_SECRET_KEY` is unset locally, the server skips reCAPTCHA
-verification (dev convenience only — production must always set it).
 
 ## Deploy
 

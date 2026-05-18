@@ -9,7 +9,6 @@
  * execute --remote` from an authenticated Cloudflare account.
  *
  * Abuse mitigations applied here:
- *  - Google reCAPTCHA v2 token verified server-side.
  *  - Per-IP rate limit in KV (5 requests / hour).
  *  - Same-origin checks plus CORS allow-list driven by ALLOWED_ORIGIN.
  *  - Honeypot field.
@@ -38,7 +37,6 @@ interface KVNamespace {
 export interface SubscribeEnv {
   DB?: D1Database;
   RATELIMIT?: KVNamespace;
-  RECAPTCHA_SECRET_KEY?: string;
   ALLOWED_ORIGIN?: string;
 }
 
@@ -82,24 +80,6 @@ function getClientIp(request: Request): string {
     request.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
     "unknown"
   );
-}
-
-async function verifyRecaptcha(token: string, secret: string, ip: string): Promise<boolean> {
-  try {
-    const form = new FormData();
-    form.append("secret", secret);
-    form.append("response", token);
-    if (ip && ip !== "unknown") form.append("remoteip", ip);
-    const res = await fetch("https://www.google.com/recaptcha/api/siteverify", {
-      method: "POST",
-      body: form,
-    });
-    if (!res.ok) return false;
-    const data = (await res.json()) as { success?: boolean };
-    return data.success === true;
-  } catch {
-    return false;
-  }
 }
 
 async function checkRateLimit(kv: KVNamespace, ip: string): Promise<boolean> {
@@ -215,22 +195,6 @@ export async function handleSubscribe(request: Request, env: SubscribeEnv): Prom
     const allowed = await checkRateLimit(env.RATELIMIT, ip);
     if (!allowed) {
       return json({ ok: false, error: "rate_limited" }, 429, corsOrigin);
-    }
-  }
-
-  // reCAPTCHA v2 verification. Required in production; skipped only if the
-  // secret is unset (local dev convenience).
-  if (env.RECAPTCHA_SECRET_KEY) {
-    const token =
-      typeof body["g-recaptcha-response"] === "string"
-        ? (body["g-recaptcha-response"] as string)
-        : "";
-    if (!token) {
-      return json({ ok: false, error: "captcha_required" }, 400, corsOrigin);
-    }
-    const ok = await verifyRecaptcha(token, env.RECAPTCHA_SECRET_KEY, ip);
-    if (!ok) {
-      return json({ ok: false, error: "captcha_failed" }, 400, corsOrigin);
     }
   }
 
