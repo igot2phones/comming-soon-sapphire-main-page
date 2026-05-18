@@ -156,6 +156,9 @@ export function NewsletterForm() {
           captcha_failed: "Verification failed. Please try again.",
           rate_limited: "Too many attempts. Please try again later.",
           payload_too_large: "Submission was too large.",
+          forbidden: "This domain is not allowed to submit newsletter signups.",
+          server_misconfigured: "Newsletter storage is not configured yet.",
+          server_error: "Newsletter storage failed. Please try again later.",
         };
         setStatus("error");
         setMessage((data.error && errMap[data.error]) || "Something went wrong. Please try again.");
