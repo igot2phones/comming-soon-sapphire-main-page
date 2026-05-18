@@ -30,7 +30,8 @@ Properties:
 - Abuse mitigations on `POST /api/subscribe`:
   - Cloudflare **Turnstile** (server-verified)
   - Per-IP **rate limit** (5/hour) via Cloudflare KV
-  - Strict **CORS** allow-list (`ALLOWED_ORIGIN`)
+  - Same-origin requests plus an optional **CORS** allow-list
+    (`ALLOWED_ORIGIN`) for any extra origins
   - **Honeypot** field + payload size cap
   - Server-side email validation + dedupe via `INSERT OR IGNORE` (no
     enumeration leak)
@@ -64,11 +65,23 @@ bunx wrangler d1 migrations apply igot2phones-newsletter --remote
 bunx wrangler secret put TURNSTILE_SECRET_KEY
 ```
 
-In the Cloudflare Pages project settings, set:
+In Cloudflare, make sure the deployed Worker/Pages project has these runtime
+bindings and variables:
 
+- **D1 binding** named exactly `DB`, connected to
+  `igot2phones-newsletter`.
+- **KV binding** named exactly `RATELIMIT`, connected to the namespace you
+  created above.
 - **Build env var** `VITE_TURNSTILE_SITE_KEY` — your Turnstile site key.
-- **Runtime var** `ALLOWED_ORIGIN` — comma-separated list of origins that
-  may call `/api/subscribe`, e.g. `https://sapphireservers.pages.dev`.
+- **Secret** `TURNSTILE_SECRET_KEY` — your Turnstile secret key.
+- **Runtime var** `ALLOWED_ORIGIN` — only needed for extra origins that are
+  not the same origin as the deployed site. If you set it, use a
+  comma-separated list such as
+  `https://sapphireservers.pages.dev,https://sapphireservers.com`.
+
+The newsletter handler looks for the D1 binding by the binding name `DB`. If
+the Cloudflare dashboard binding is named anything else, `/api/subscribe` will
+return `server_misconfigured` and no email can be inserted.
 
 ## Local development
 
@@ -117,4 +130,3 @@ bunx wrangler d1 execute igot2phones-newsletter --remote \
 | `bun run build`  | Production build                         |
 | `bun run lint`   | ESLint                                   |
 | `bun run format` | Prettier                                 |
-

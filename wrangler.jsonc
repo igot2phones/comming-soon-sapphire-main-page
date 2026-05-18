@@ -8,8 +8,8 @@
   // Non-secret config. Secrets (TURNSTILE_SECRET_KEY) are set with
   // `wrangler secret put` and never committed.
   "vars": {
-    // Comma-separated allow-list of origins permitted to call /api/subscribe.
-    // Override per-environment in the Cloudflare dashboard for production.
+    // Comma-separated allow-list for extra origins permitted to call /api/subscribe.
+    // The Worker's own origin is always accepted.
     "ALLOWED_ORIGIN": "http://localhost:5173"
   },
 

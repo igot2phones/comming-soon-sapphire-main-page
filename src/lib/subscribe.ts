@@ -11,7 +11,7 @@
  * Abuse mitigations applied here:
  *  - Cloudflare Turnstile token verified server-side.
  *  - Per-IP rate limit in KV (5 requests / hour).
- *  - Strict CORS allow-list driven by ALLOWED_ORIGIN.
+ *  - Same-origin checks plus CORS allow-list driven by ALLOWED_ORIGIN.
  *  - Honeypot field.
  *  - Hard cap on request body size.
  *  - Server-side email validation + normalisation.
@@ -21,6 +21,7 @@
 // Minimal local types so we don't depend on @cloudflare/workers-types.
 interface D1Result {
   success: boolean;
+  error?: string;
 }
 interface D1PreparedStatement {
   bind: (...values: unknown[]) => D1PreparedStatement;
@@ -61,9 +62,11 @@ function json(body: Record<string, unknown>, status: number, corsOrigin: string 
 
 function resolveAllowedOrigin(
   requestOrigin: string | null,
+  requestUrl: string,
   allowed: string | undefined,
 ): string | null {
   if (!requestOrigin) return null;
+  if (requestOrigin === new URL(requestUrl).origin) return requestOrigin;
   if (!allowed) return null;
   const list = allowed
     .split(",")
@@ -115,16 +118,19 @@ async function checkRateLimit(kv: KVNamespace, ip: string): Promise<boolean> {
 async function ensureSubscribersSchema(db: D1Database): Promise<void> {
   if (!subscribersSchemaReady) {
     subscribersSchemaReady = (async () => {
-      await db
+      const table = await db
         .prepare(
           "CREATE TABLE IF NOT EXISTS subscribers (email TEXT PRIMARY KEY, created_at INTEGER NOT NULL)",
         )
         .run();
-      await db
+      if (!table.success) throw new Error(table.error ?? "Failed to create subscribers table");
+
+      const index = await db
         .prepare(
           "CREATE INDEX IF NOT EXISTS idx_subscribers_created_at ON subscribers (created_at)",
         )
         .run();
+      if (!index.success) throw new Error(index.error ?? "Failed to create subscribers index");
     })();
   }
   try {
@@ -137,7 +143,7 @@ async function ensureSubscribersSchema(db: D1Database): Promise<void> {
 
 export async function handleSubscribe(request: Request, env: SubscribeEnv): Promise<Response> {
   const requestOrigin = request.headers.get("origin");
-  const corsOrigin = resolveAllowedOrigin(requestOrigin, env.ALLOWED_ORIGIN);
+  const corsOrigin = resolveAllowedOrigin(requestOrigin, request.url, env.ALLOWED_ORIGIN);
 
   // CORS preflight.
   if (request.method === "OPTIONS") {
@@ -158,8 +164,8 @@ export async function handleSubscribe(request: Request, env: SubscribeEnv): Prom
     return json({ ok: false, error: "method_not_allowed" }, 405, corsOrigin);
   }
 
-  // If an Origin header is present, it MUST be in the allow-list.
-  // Same-origin POSTs from typical browsers also send Origin, so this is safe.
+  // If an Origin header is present, it must be same-origin or in the allow-list.
+  // Same-origin POSTs from typical browsers also send Origin.
   if (requestOrigin && !corsOrigin) {
     return json({ ok: false, error: "forbidden" }, 403, null);
   }
@@ -232,9 +238,12 @@ export async function handleSubscribe(request: Request, env: SubscribeEnv): Prom
   // from learning whether a given address is already subscribed.
   try {
     await ensureSubscribersSchema(env.DB);
-    await env.DB.prepare("INSERT OR IGNORE INTO subscribers (email, created_at) VALUES (?, ?)")
+    const insert = await env.DB.prepare(
+      "INSERT OR IGNORE INTO subscribers (email, created_at) VALUES (?, ?)",
+    )
       .bind(email, Math.floor(Date.now() / 1000))
       .run();
+    if (!insert.success) throw new Error(insert.error ?? "Failed to insert subscriber");
   } catch (err) {
     console.error("subscribe insert failed", err);
     return json({ ok: false, error: "server_error" }, 500, corsOrigin);
