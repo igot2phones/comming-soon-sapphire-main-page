@@ -52,6 +52,7 @@ export function NewsletterForm() {
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [widgetFailed, setWidgetFailed] = useState(false);
   const tokenRef = useRef<string>("");
   const widgetContainerRef = useRef<HTMLDivElement | null>(null);
   const widgetIdRef = useRef<string | null>(null);
@@ -61,24 +62,32 @@ export function NewsletterForm() {
     let cancelled = false;
     loadTurnstileScript()
       .then(() => {
-        if (cancelled || !widgetContainerRef.current || !window.turnstile) return;
-        widgetIdRef.current = window.turnstile.render(widgetContainerRef.current, {
-          sitekey: SITE_KEY,
-          theme: "dark",
-          size: "flexible",
-          callback: (token: string) => {
-            tokenRef.current = token;
-          },
-          "expired-callback": () => {
-            tokenRef.current = "";
-          },
-          "error-callback": () => {
-            tokenRef.current = "";
-          },
-        });
+        if (cancelled || !widgetContainerRef.current || !window.turnstile) {
+          if (!cancelled && !window.turnstile) setWidgetFailed(true);
+          return;
+        }
+        try {
+          widgetIdRef.current = window.turnstile.render(widgetContainerRef.current, {
+            sitekey: SITE_KEY,
+            theme: "dark",
+            size: "normal",
+            callback: (token: string) => {
+              tokenRef.current = token;
+            },
+            "expired-callback": () => {
+              tokenRef.current = "";
+            },
+            "error-callback": () => {
+              tokenRef.current = "";
+              setWidgetFailed(true);
+            },
+          });
+        } catch {
+          setWidgetFailed(true);
+        }
       })
       .catch(() => {
-        // Non-fatal — submit will surface a generic error if it fails.
+        if (!cancelled) setWidgetFailed(true);
       });
     return () => {
       cancelled = true;
@@ -97,25 +106,7 @@ export function NewsletterForm() {
     tokenRef.current = "";
     if (widgetIdRef.current && window.turnstile) {
       try {
-        window.turnstile.remove(widgetIdRef.current);
-        widgetIdRef.current = null;
-        // Re-render the widget fresh
-        if (widgetContainerRef.current) {
-          widgetIdRef.current = window.turnstile.render(widgetContainerRef.current, {
-            sitekey: SITE_KEY,
-            theme: "dark",
-            size: "flexible",
-            callback: (token: string) => {
-              tokenRef.current = token;
-            },
-            "expired-callback": () => {
-              tokenRef.current = "";
-            },
-            "error-callback": () => {
-              tokenRef.current = "";
-            },
-          });
-        }
+        window.turnstile.reset(widgetIdRef.current);
       } catch {
         /* ignore */
       }
@@ -136,7 +127,11 @@ export function NewsletterForm() {
 
     if (SITE_KEY && !tokenRef.current) {
       setStatus("error");
-      setMessage("Please complete the verification challenge.");
+      setMessage(
+        widgetFailed
+          ? "Verification couldn't load. Please disable any ad/script blocker for this site and refresh."
+          : "Please complete the verification challenge.",
+      );
       return;
     }
 
@@ -170,7 +165,9 @@ export function NewsletterForm() {
       } else {
         const errMap: Record<string, string> = {
           invalid_email: "Please enter a valid email address.",
-          captcha_required: "Please complete the verification challenge.",
+          captcha_required: SITE_KEY
+            ? "Please complete the verification challenge."
+            : "Verification is currently unavailable. Please try again later.",
           captcha_failed: "Verification failed. Please try again.",
           rate_limited: "Too many attempts. Please try again later.",
           payload_too_large: "Submission was too large.",
@@ -230,9 +227,16 @@ export function NewsletterForm() {
       {SITE_KEY && (
         <div
           ref={widgetContainerRef}
-          className="flex justify-center"
+          className="flex min-h-[65px] justify-center"
           aria-label="Verification challenge"
         />
+      )}
+
+      {SITE_KEY && widgetFailed && status === "idle" && (
+        <p role="status" className="text-xs text-destructive">
+          Verification couldn&apos;t load. Please disable any ad/script blocker for this site and
+          refresh.
+        </p>
       )}
 
       {status !== "idle" && (
