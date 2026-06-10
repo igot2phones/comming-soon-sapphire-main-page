@@ -228,7 +228,7 @@ export function NewsletterForm() {
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-full bg-white px-6 py-3 text-sm font-light text-black transition hover:bg-white/90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+          className="sheen rounded-full bg-white px-6 py-3 text-sm font-light text-black transition duration-300 hover:bg-white/90 hover:shadow-[0_0_24px_oklch(0.75_0.18_250/0.35)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting ? "Sending…" : "Notify Me"}
         </button>
