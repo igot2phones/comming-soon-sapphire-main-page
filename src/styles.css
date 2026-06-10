@@ -121,3 +121,190 @@
 .delay-300 { animation-delay: 0.3s; }
 .delay-500 { animation-delay: 0.5s; }
 .delay-700 { animation-delay: 0.7s; }
+
+/* ---------- Scroll-triggered reveal (driven by useReveal hook) ---------- */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(26px);
+  filter: blur(10px);
+  transition:
+    opacity 1s cubic-bezier(0.2, 0.8, 0.2, 1),
+    transform 1s cubic-bezier(0.2, 0.8, 0.2, 1),
+    filter 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition-delay: var(--reveal-delay, 0s);
+}
+[data-reveal].is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+}
+
+/* ---------- Ambient detail ---------- */
+/* Breathing glow blobs: animates independent scale/opacity so it composes
+   with existing Tailwind translate/transform classes. */
+@keyframes breathe {
+  0%, 100% { scale: 1; opacity: 1; }
+  50% { scale: 1.1; opacity: 0.72; }
+}
+.animate-breathe { animation: breathe 9s ease-in-out infinite; }
+
+/* Gradient shimmer for headline accent words. */
+@keyframes shimmer {
+  to { background-position: -200% center; }
+}
+.text-shimmer {
+  background: linear-gradient(
+    110deg,
+    oklch(0.68 0.21 255) 20%,
+    oklch(0.88 0.13 245) 50%,
+    oklch(0.68 0.21 255) 80%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 7s linear infinite;
+}
+
+/* Aurora ribbon drifting slowly behind the hero. */
+@keyframes aurora {
+  0%, 100% { transform: translateX(-6%) rotate(-5deg) scaleY(1); filter: blur(60px) hue-rotate(0deg); }
+  50% { transform: translateX(6%) rotate(2deg) scaleY(1.15); filter: blur(70px) hue-rotate(28deg); }
+}
+.animate-aurora { animation: aurora 22s ease-in-out infinite; }
+
+/* Slow twinkling for pure-CSS accent dots. */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.7; }
+}
+.animate-twinkle { animation: twinkle 4s ease-in-out infinite; }
+
+/* Film grain (tiny SVG turbulence noise, data URI — no extra request). */
+.grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+}
+
+/* Faint sapphire grid fading out radially. */
+.bg-grid-faint {
+  background-image:
+    linear-gradient(to right, oklch(0.7 0.15 250 / 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, oklch(0.7 0.15 250 / 0.05) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 45%, #000 0%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 45%, #000 0%, transparent 70%);
+}
+
+/* ---------- Hover micro-interactions ---------- */
+/* Mouse-tracking spotlight card (vars fed by usePointerGlow hook). */
+.spotlight-card {
+  position: relative;
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: transform;
+}
+.spotlight-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    420px circle at var(--glow-x, 50%) var(--glow-y, 50%),
+    oklch(0.7 0.22 250 / 0.1),
+    transparent 65%
+  );
+  opacity: var(--glow-o, 0);
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+.spotlight-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: radial-gradient(
+    320px circle at var(--glow-x, 50%) var(--glow-y, 50%),
+    oklch(0.75 0.22 250 / 0.55),
+    transparent 70%
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: var(--glow-o, 0);
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+
+/* Gradient sheen sweep across buttons on hover. */
+.sheen {
+  position: relative;
+  overflow: hidden;
+}
+.sheen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(105deg, transparent 38%, oklch(1 0 0 / 0.22) 50%, transparent 62%);
+  transform: translateX(-150%);
+  transition: transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+  pointer-events: none;
+}
+.sheen:hover::before { transform: translateX(150%); }
+
+/* Soft glow-pulse press feedback for primary CTAs. */
+.btn-glow-press {
+  transition: box-shadow 0.35s ease, transform 0.2s ease;
+}
+.btn-glow-press:active {
+  transform: scale(0.97);
+  box-shadow: 0 0 36px oklch(0.7 0.22 250 / 0.55), 0 0 80px oklch(0.7 0.22 250 / 0.3);
+}
+
+/* Animated sheen on the hairline next to uppercase section labels. */
+.label-line {
+  position: relative;
+  overflow: hidden;
+}
+.label-line::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, transparent, oklch(0.85 0.16 250 / 0.9), transparent);
+  transform: translateX(-100%);
+  animation: scroll-line 3.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+/* ---------- Reduced motion: strip non-essential animation ---------- */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .animate-float,
+  .animate-breathe,
+  .animate-pulse-glow,
+  .animate-spin-slow,
+  .animate-scroll-line,
+  .animate-scroll-dot,
+  .animate-aurora,
+  .animate-twinkle,
+  .animate-fade-up,
+  .animate-fade-in,
+  .text-shimmer {
+    animation: none !important;
+  }
+  .sheen::before,
+  .label-line::after {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    content: none;
+  }
+  [data-reveal] {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
+  }
+  .spotlight-card { transition: none; }
+}
