@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NewsletterForm } from "@/components/NewsletterForm";
 import { Starfield } from "@/components/Starfield";
 import { useReveal } from "@/hooks/useReveal";
 import { useParallax } from "@/hooks/useParallax";
 import { usePointerGlow } from "@/hooks/usePointerGlow";
+import { useMagnetic } from "@/hooks/useMagnetic";
 
 export const Route = createFileRoute("/")({
   component: ComingSoon,
@@ -58,6 +59,133 @@ function ScrollProgress() {
   );
 }
 
+/** Per-letter cascade: each character ripples in once the ancestor
+ * [data-reveal] container earns .is-revealed. Screen readers get the intact
+ * word; the animated letters are aria-hidden. */
+function SplitLetters({
+  text,
+  delayStart = 0,
+  step = 0.05,
+  className = "",
+}: {
+  text: string;
+  delayStart?: number;
+  step?: number;
+  className?: string;
+}) {
+  return (
+    <span className={className}>
+      <span className="sr-only">{text}</span>
+      {text.split("").map((ch, i) => (
+        <span
+          key={i}
+          aria-hidden
+          className="letter"
+          style={
+            { "--letter-delay": `${(delayStart + i * step).toFixed(2)}s` } as React.CSSProperties
+          }
+        >
+          {ch === " " ? " " : ch}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+const SECTIONS = [
+  { id: "hero", label: "Intro" },
+  { id: "about", label: "About the redesign" },
+  { id: "newsletter", label: "Stay in the loop" },
+] as const;
+
+/** Fixed diamond dot-nav on the right edge: tracks the section in view and
+ * jumps to a section on click. Desktop only, decorative sizing. */
+function SectionDots() {
+  const [active, setActive] = useState<string>(SECTIONS[0].id);
+
+  useEffect(() => {
+    if (typeof IntersectionObserver === "undefined") return;
+    const els = SECTIONS.map((s) => document.getElementById(s.id)).filter(
+      (el): el is HTMLElement => el !== null,
+    );
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) setActive(entry.target.id);
+        }
+      },
+      { threshold: 0.5 },
+    );
+    els.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <nav
+      aria-label="Sections"
+      className="fixed right-6 top-1/2 z-40 hidden -translate-y-1/2 flex-col items-center gap-5 lg:flex"
+    >
+      {SECTIONS.map((s) => {
+        const isActive = active === s.id;
+        return (
+          <button
+            key={s.id}
+            type="button"
+            aria-label={s.label}
+            aria-current={isActive ? "true" : undefined}
+            onClick={() =>
+              document.getElementById(s.id)?.scrollIntoView({ behavior: "smooth", block: "start" })
+            }
+            className="group relative flex h-6 w-6 items-center justify-center"
+          >
+            <span
+              className={`block h-2 w-2 rotate-45 border transition-all duration-500 ${
+                isActive
+                  ? "scale-125 border-sapphire-glow bg-sapphire-glow shadow-[0_0_12px_oklch(0.7_0.22_250/0.8)]"
+                  : "border-white/30 bg-transparent group-hover:border-sapphire-glow/70 group-hover:shadow-[0_0_8px_oklch(0.7_0.22_250/0.4)]"
+              }`}
+            />
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
+
+/** Rising ember sparks drifting up through a section. Pure CSS; hidden under
+ * prefers-reduced-motion. */
+function Sparks() {
+  const sparks = [
+    { left: "8%", dur: "13s", delay: "-2s", o: 0.5, x: "18px" },
+    { left: "18%", dur: "10s", delay: "-7s", o: 0.35, x: "-14px" },
+    { left: "31%", dur: "15s", delay: "-4s", o: 0.55, x: "10px" },
+    { left: "44%", dur: "11s", delay: "-9s", o: 0.3, x: "-20px" },
+    { left: "57%", dur: "14s", delay: "-1s", o: 0.5, x: "16px" },
+    { left: "68%", dur: "9.5s", delay: "-6s", o: 0.4, x: "-8px" },
+    { left: "79%", dur: "12.5s", delay: "-3s", o: 0.55, x: "12px" },
+    { left: "90%", dur: "10.5s", delay: "-8s", o: 0.35, x: "-16px" },
+  ];
+  return (
+    <div aria-hidden className="absolute inset-0 overflow-hidden pointer-events-none">
+      {sparks.map((s, i) => (
+        <span
+          key={i}
+          className="spark"
+          style={
+            {
+              left: s.left,
+              "--spark-dur": s.dur,
+              "--spark-delay": s.delay,
+              "--spark-o": s.o,
+              "--spark-x": s.x,
+            } as React.CSSProperties
+          }
+        />
+      ))}
+    </div>
+  );
+}
+
 /** Mouse-tracking spotlight wrapper (radial glow border + optional 3D tilt). */
 function Spotlight({
   tilt = false,
@@ -79,7 +207,11 @@ function ComingSoon() {
   const heroReveal = useReveal<HTMLDivElement>();
   const aboutReveal = useReveal<HTMLDivElement>();
   const newsletterReveal = useReveal<HTMLDivElement>();
-  const footerReveal = useReveal<HTMLElement>();
+  // The footer hugs the page bottom, so drop the default -8% bottom inset —
+  // it would otherwise never intersect and stay invisible.
+  const footerReveal = useReveal<HTMLElement>({ rootMargin: "0px", threshold: 0.05 });
+  const heroCtaMagnet = useMagnetic<HTMLSpanElement>(0.35);
+  const discordMagnet = useMagnetic<HTMLAnchorElement>(0.12);
 
   const scrollToNewsletter = () => {
     document.getElementById("newsletter")?.scrollIntoView({
@@ -91,6 +223,7 @@ function ComingSoon() {
   return (
     <main className="relative w-full overflow-x-hidden text-foreground bg-black">
       <ScrollProgress />
+      <SectionDots />
 
       {/* Global ambient background */}
       <div aria-hidden className="fixed inset-0 pointer-events-none z-0">
@@ -112,6 +245,7 @@ function ComingSoon() {
 
       {/* HERO */}
       <section
+        id="hero"
         ref={heroSection}
         className="snap-section relative z-10 min-h-screen w-full grid grid-cols-1 lg:grid-cols-12 items-center gap-y-16 px-6 sm:px-10 lg:px-20 xl:px-28 py-24"
       >
@@ -145,6 +279,14 @@ function ComingSoon() {
               className="absolute -right-20 bottom-[8%] w-[34rem] opacity-30 blur-[8px] saturate-[0.6] rotate-[6deg] [mask-image:radial-gradient(ellipse_at_center,#000_20%,transparent_70%)] animate-float"
               style={{ animationDuration: "14s", animationDelay: "-3s" }}
             />
+            {/* Arcane halo rings turning slowly behind the subject */}
+            <div
+              data-parallax="0.16"
+              className="absolute right-[4%] top-1/2 -translate-y-1/2 h-[42rem] w-[42rem]"
+            >
+              <div className="halo-ring animate-spin-slow absolute inset-0 opacity-40" />
+              <div className="halo-ring animate-spin-reverse absolute inset-12 opacity-25" />
+            </div>
             {/* Hero subject — sharper but still ethereal */}
             <img
               src="/assets/spoiler-2.png"
@@ -183,7 +325,7 @@ function ComingSoon() {
         {/* Left content */}
         <div
           ref={heroReveal}
-          className="relative z-10 col-span-1 lg:col-span-6 xl:col-span-5 max-w-xl"
+          className="view-fade relative z-10 col-span-1 lg:col-span-6 xl:col-span-5 max-w-xl"
         >
           <div data-reveal className="flex items-center gap-3">
             <span className="label-line h-px w-10 bg-gradient-to-r from-transparent via-sapphire-glow/60 to-transparent" />
@@ -197,9 +339,13 @@ function ComingSoon() {
             style={{ "--reveal-delay": "0.15s" } as React.CSSProperties}
             className="mt-10 text-[3.25rem] leading-[0.95] sm:text-7xl md:text-[5.25rem] font-light tracking-[-0.03em] text-foreground/95"
           >
-            Coming
+            <SplitLetters text="Coming" delayStart={0.2} step={0.055} />
             <br />
-            <span className="text-shimmer font-extralight italic">soon.</span>
+            {/* Entrance on the wrapper so the inner span keeps its shimmer
+                animation (both effects use the animation property). */}
+            <span className="letter" style={{ "--letter-delay": "0.65s" } as React.CSSProperties}>
+              <span className="text-shimmer font-extralight italic">soon.</span>
+            </span>
           </h1>
 
           <p
@@ -227,7 +373,10 @@ function ComingSoon() {
               <span className="relative h-px w-20 overflow-hidden bg-white/10">
                 <span className="absolute inset-y-0 left-0 w-full bg-gradient-to-r from-transparent via-sapphire-glow to-transparent animate-scroll-line" />
               </span>
-              <span className="btn-glow-press relative flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/[0.02] backdrop-blur-xl transition-all duration-500 group-hover:border-sapphire-glow/60 group-hover:bg-sapphire-glow/10 group-hover:-translate-y-0.5 group-hover:shadow-[0_0_24px_oklch(0.7_0.22_250/0.35)] group-active:scale-95">
+              <span
+                ref={heroCtaMagnet}
+                className="btn-glow-press relative flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/[0.02] backdrop-blur-xl transition-all duration-500 group-hover:border-sapphire-glow/60 group-hover:bg-sapphire-glow/10 group-hover:shadow-[0_0_24px_oklch(0.7_0.22_250/0.35)] group-active:scale-95"
+              >
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
@@ -262,6 +411,7 @@ function ComingSoon() {
 
       {/* ABOUT THE REDESIGN */}
       <section
+        id="about"
         ref={aboutSection}
         className="snap-section relative z-10 w-full min-h-screen grid grid-cols-1 lg:grid-cols-12 items-center gap-y-16 px-6 sm:px-10 lg:px-20 xl:px-28 py-24"
       >
@@ -287,6 +437,13 @@ function ComingSoon() {
               className="absolute -left-16 bottom-[10%] w-[32rem] opacity-25 blur-[8px] saturate-[0.6] rotate-[-7deg] [mask-image:radial-gradient(ellipse_at_center,#000_10%,rgba(0,0,0,0.5)_38%,transparent_66%)] animate-float"
               style={{ animationDuration: "15s", animationDelay: "-2s" }}
             />
+            {/* Arcane halo ring behind the subject */}
+            <div
+              data-parallax="0.16"
+              className="absolute left-[6%] top-1/2 -translate-y-1/2 h-[38rem] w-[38rem]"
+            >
+              <div className="halo-ring animate-spin-reverse absolute inset-0 opacity-30" />
+            </div>
             {/* Hero subject */}
             <img
               src="/assets/spoiler-4.png"
@@ -320,7 +477,7 @@ function ComingSoon() {
         {/* Right content */}
         <div
           ref={aboutReveal}
-          className="relative z-10 col-span-1 lg:col-span-6 lg:col-start-7 xl:col-span-5 xl:col-start-8 max-w-xl ml-auto"
+          className="view-fade relative z-10 col-span-1 lg:col-span-6 lg:col-start-7 xl:col-span-5 xl:col-start-8 max-w-xl ml-auto"
         >
           <div data-reveal className="flex items-center gap-3">
             <span className="label-line h-px w-10 bg-gradient-to-r from-transparent via-sapphire-glow/60 to-transparent" />
@@ -383,7 +540,10 @@ function ComingSoon() {
           />
         </div>
 
-        <div ref={newsletterReveal} className="relative w-full max-w-6xl">
+        {/* Rising ember sparks */}
+        <Sparks />
+
+        <div ref={newsletterReveal} className="view-fade relative w-full max-w-6xl">
           <div className="text-center">
             <p
               data-reveal
@@ -503,11 +663,12 @@ function ComingSoon() {
 
               <div className="relative mt-auto pt-8">
                 <a
+                  ref={discordMagnet}
                   href="https://discord.gg/ZpuHG457RB"
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Join the Sapphire Servers Discord"
-                  className="group/btn sheen btn-glow-press inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-[#5865F2] px-6 py-3.5 text-sm font-medium text-white shadow-[0_8px_30px_-10px_rgba(88,101,242,0.6)] transition hover:-translate-y-0.5 hover:bg-[#4752c4] hover:shadow-[0_10px_40px_-8px_rgba(88,101,242,0.7)] active:scale-[0.98] sm:w-auto sm:min-w-[16rem]"
+                  className="group/btn sheen btn-glow-press inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-[#5865F2] px-6 py-3.5 text-sm font-medium text-white shadow-[0_8px_30px_-10px_rgba(88,101,242,0.6)] transition hover:bg-[#4752c4] hover:shadow-[0_10px_40px_-8px_rgba(88,101,242,0.7)] active:scale-[0.98] sm:w-auto sm:min-w-[16rem]"
                 >
                   <svg
                     viewBox="0 0 24 24"
@@ -544,7 +705,8 @@ function ComingSoon() {
       >
         <span
           aria-hidden
-          className="absolute inset-x-0 top-0 mx-auto h-px w-full max-w-3xl bg-gradient-to-r from-transparent via-sapphire-glow/30 to-transparent"
+          data-reveal
+          className="reveal-line absolute inset-x-0 top-0 mx-auto h-px w-full max-w-3xl bg-gradient-to-r from-transparent via-sapphire-glow/30 to-transparent"
         />
         <span data-reveal className="inline-block">
           Sapphire Servers — Rewriting everything to bring you more power, more features, and more

@@ -4,11 +4,16 @@ import { useEffect, useRef } from "react";
  * Scroll-triggered reveal. Attach the returned ref to a container; every
  * descendant carrying `data-reveal` fades/slides/blurs in once it scrolls
  * into view. Stagger per element with `style={{ "--reveal-delay": "0.2s" }}`.
- * SSR-safe (IntersectionObserver only touched inside useEffect) and honors
+ * Observer options can be overridden per container — e.g. elements pinned to
+ * the very bottom of the page need `rootMargin: "0px"`, since the default
+ * -8% bottom inset would keep them from ever intersecting. SSR-safe
+ * (IntersectionObserver only touched inside useEffect) and honors
  * prefers-reduced-motion via the CSS in styles.css.
  */
-export function useReveal<T extends HTMLElement>() {
+export function useReveal<T extends HTMLElement>(options?: IntersectionObserverInit) {
   const ref = useRef<T>(null);
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
 
   useEffect(() => {
     const root = ref.current;
@@ -32,7 +37,7 @@ export function useReveal<T extends HTMLElement>() {
           }
         }
       },
-      { threshold: 0.15, rootMargin: "0px 0px -8% 0px" },
+      { threshold: 0.15, rootMargin: "0px 0px -8% 0px", ...optionsRef.current },
     );
 
     targets.forEach((el) => observer.observe(el));
