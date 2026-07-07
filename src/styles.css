@@ -66,16 +66,26 @@
   body {
     background: #000;
     color: var(--color-foreground);
+    /* Clip sideways overflow from scene rotations / card sweeps without
+       creating a scroll container — `hidden` would re-anchor position:sticky
+       and view() timelines to <body>. (hidden line is the fallback for
+       browsers without `clip`; those also lack scroll-driven animations.) */
+    overflow-x: hidden;
+    overflow-x: clip;
   }
   body {
     font-family: var(--font-sans);
     background: #000;
     min-height: 100vh;
-    overflow-x: hidden;
   }
   .snap-section {
     scroll-snap-align: start;
     scroll-snap-stop: always;
+  }
+  /* The page end is a snap position too, so proximity snapping never pulls
+     the footer back out of view. */
+  footer {
+    scroll-snap-align: end;
   }
 }
 
@@ -241,34 +251,185 @@
   animation-delay: var(--letter-delay, 0s);
 }
 
-/* ---------- Scroll-driven section fades (progressive enhancement) ---------- */
-/* Where the browser supports scroll-driven animations, section content
-   softly materializes while entering the viewport and dissolves upward
-   while leaving — no JS involved. Others simply keep the IO reveals. */
-@keyframes view-enter {
+/* ---------- Scroll-scrubbed motion (progressive enhancement) ---------- */
+/* Where the browser supports scroll-driven animations, motion is tied
+   directly to scroll position: elements materialize with travel/blur while
+   entering the viewport, dissolve upward while leaving, headlines wipe on,
+   artwork scenes slowly drift, and the hero pins in place while the next
+   section glides over it. Scrubbing works in both directions — scrolling
+   back re-plays everything in reverse. Browsers without support simply
+   keep the IntersectionObserver reveals. */
+@keyframes svf-enter {
   from {
     opacity: 0;
-    scale: 0.97;
-    translate: 0 44px;
+    scale: 0.95;
+    translate: 0 12vh;
+    filter: blur(8px);
   }
 }
-@keyframes view-exit {
+@keyframes svf-enter-left {
+  from {
+    opacity: 0;
+    translate: -6rem 8vh;
+    rotate: -2deg;
+    filter: blur(6px);
+  }
+}
+@keyframes svf-enter-right {
+  from {
+    opacity: 0;
+    translate: 6rem 8vh;
+    rotate: 2deg;
+    filter: blur(6px);
+  }
+}
+@keyframes svf-exit {
   to {
     opacity: 0;
-    scale: 0.985;
-    translate: 0 -44px;
+    scale: 0.97;
+    translate: 0 -12vh;
+    filter: blur(8px);
   }
 }
+/* Whole-scene drift: artwork stacks slowly rotate/settle as the section
+   travels through the viewport. rotate/scale are independent properties, so
+   this composes with the JS parallax which drives `translate` on children. */
+@keyframes scene-drift {
+  from {
+    rotate: -4deg;
+    scale: 1.1;
+  }
+  to {
+    rotate: 2.5deg;
+    scale: 1;
+  }
+}
+/* Headline wipe: text unmasks left-to-right as you scroll into it. Negative
+   vertical insets keep the reveal blur and descenders unclipped. */
+@keyframes scrub-wipe {
+  from {
+    clip-path: inset(-25% 100% -25% -5%);
+  }
+  to {
+    clip-path: inset(-25% -8% -25% -5%);
+  }
+}
+/* Hero farewell while the About section slides over the pinned hero. */
+@keyframes hero-sink {
+  to {
+    opacity: 0;
+    scale: 0.92;
+    translate: 0 -6vh;
+    filter: blur(6px);
+  }
+}
+/* Fade the "scroll" pill out over the first stretch of scrolling. */
+@keyframes hint-fade {
+  to {
+    opacity: 0;
+    translate: 0 12px;
+  }
+}
+/* Deep-descent veil: the void turns violet as you sink down the page.
+   Invisible by default; only the scroll-driven animation lifts it. */
+@keyframes descend {
+  to {
+    opacity: 0.45;
+  }
+}
+.descent-veil {
+  opacity: 0;
+  background:
+    radial-gradient(ellipse 90% 70% at 50% 110%, oklch(0.35 0.16 300 / 0.55), transparent 70%),
+    radial-gradient(ellipse 70% 50% at 85% 60%, oklch(0.3 0.14 285 / 0.35), transparent 75%);
+}
+
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
-    .view-fade {
+    .svf,
+    .svf-left,
+    .svf-right {
       animation:
-        view-enter linear both,
-        view-exit linear both;
+        svf-enter linear both,
+        svf-exit linear both;
       animation-timeline: view(), view();
       animation-range:
-        entry 5% entry 90%,
-        exit 15% exit 95%;
+        entry 10% entry 90%,
+        exit 10% exit 90%;
+    }
+    .svf-left {
+      animation-name: svf-enter-left, svf-exit;
+    }
+    .svf-right {
+      animation-name: svf-enter-right, svf-exit;
+    }
+    /* Later start for stacked stagger inside a scrubbed parent. */
+    .svf-late {
+      animation-range:
+        entry 25% cover 25%,
+        exit 10% exit 90%;
+    }
+    /* Scroll owns the motion here — disarm the one-shot IO reveal so the
+       two systems never fight. (Non-supporting browsers keep it.) */
+    [data-reveal].svf,
+    [data-reveal].svf-left,
+    [data-reveal].svf-right {
+      opacity: 1;
+      transform: none;
+      filter: none;
+      transition: none;
+    }
+    .scene-drift {
+      transform-origin: 50% 50%;
+      animation: scene-drift linear both;
+      animation-timeline: view();
+      animation-range: cover 0% cover 100%;
+    }
+    .scrub-wipe {
+      animation: scrub-wipe linear both;
+      animation-timeline: view();
+      animation-range: entry 25% entry 95%;
+    }
+    .scroll-hint {
+      animation: hint-fade linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0vh 60vh;
+    }
+    .descent-veil {
+      animation: descend linear both;
+      animation-timeline: scroll(root);
+    }
+  }
+}
+
+/* Pinned hero: the hero holds still while About glides over it, sinking
+   away as the overlap progresses (driven by About's own view timeline). */
+@supports (timeline-scope: --about-view) and (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .stage {
+      timeline-scope: --about-view;
+    }
+    #about {
+      view-timeline: --about-view block;
+    }
+    #hero {
+      position: sticky;
+      top: 0;
+      scroll-snap-align: none;
+      animation: hero-sink linear both;
+      animation-timeline: --about-view;
+      animation-range: entry 0% entry 100%;
+    }
+    /* Soft shadow front above the incoming section sells the overlap. */
+    #about::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: -22vh;
+      height: 22vh;
+      background: linear-gradient(to top, rgb(0 0 0 / 0.9), transparent);
+      pointer-events: none;
     }
   }
 }

@@ -99,25 +99,38 @@ const SECTIONS = [
 ] as const;
 
 /** Fixed diamond dot-nav on the right edge: tracks the section in view and
- * jumps to a section on click. Desktop only, decorative sizing. */
+ * jumps to a section on click. Desktop only, decorative sizing.
+ * Active state is derived from scroll position (last section whose top has
+ * crossed the viewport middle) rather than an IntersectionObserver — the
+ * pinned hero never leaves the viewport, which would confuse IO tracking. */
 function SectionDots() {
   const [active, setActive] = useState<string>(SECTIONS[0].id);
 
   useEffect(() => {
-    if (typeof IntersectionObserver === "undefined") return;
-    const els = SECTIONS.map((s) => document.getElementById(s.id)).filter(
-      (el): el is HTMLElement => el !== null,
-    );
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) setActive(entry.target.id);
-        }
-      },
-      { threshold: 0.5 },
-    );
-    els.forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const mid = (window.innerHeight || 1) / 2;
+      let current = SECTIONS[0].id;
+      for (const s of SECTIONS) {
+        const el = document.getElementById(s.id);
+        // The pinned hero always reports top 0; later sections win once
+        // their top crosses the middle of the viewport.
+        if (el && el.getBoundingClientRect().top <= mid) current = s.id;
+      }
+      setActive(current);
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
   }, []);
 
   return (
@@ -133,9 +146,17 @@ function SectionDots() {
             type="button"
             aria-label={s.label}
             aria-current={isActive ? "true" : undefined}
-            onClick={() =>
-              document.getElementById(s.id)?.scrollIntoView({ behavior: "smooth", block: "start" })
-            }
+            onClick={() => {
+              // The pinned hero always sits at viewport top, so
+              // scrollIntoView would be a no-op for it — go to page top.
+              if (s.id === SECTIONS[0].id) {
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              } else {
+                document
+                  .getElementById(s.id)
+                  ?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }
+            }}
             className="group relative flex h-6 w-6 items-center justify-center"
           >
             <span
@@ -220,8 +241,11 @@ function ComingSoon() {
     });
   };
 
+  // Horizontal clipping lives on <body> (styles.css): overflow on <main>
+  // would turn it into a scroll container, breaking the pinned hero and
+  // anchoring every view() timeline to a box that never scrolls.
   return (
-    <main className="relative w-full overflow-x-hidden text-foreground bg-black">
+    <main className="stage relative w-full text-foreground bg-black">
       <ScrollProgress />
       <SectionDots />
 
@@ -233,6 +257,9 @@ function ComingSoon() {
           style={{ animationDelay: "-4s" }}
         />
       </div>
+
+      {/* Deep-descent veil: violet rises with scroll depth (scroll-driven) */}
+      <div aria-hidden className="descent-veil fixed inset-0 pointer-events-none z-0" />
 
       {/* Star/particle field */}
       <Starfield />
@@ -260,12 +287,12 @@ function ComingSoon() {
           aria-hidden
           className="hidden lg:block absolute inset-y-0 right-0 w-[62%] pointer-events-none"
         >
-          <div className="relative h-full w-full overflow-visible">
+          <div className="scene-drift relative h-full w-full overflow-visible">
             {/* Far drifting layer */}
             <img
               src="/assets/spoiler-3.png"
               alt=""
-              data-parallax="0.35"
+              data-parallax="0.55"
               data-drift="10"
               className="absolute right-[6%] top-[14%] w-[32rem] opacity-25 blur-[6px] saturate-[0.7] rotate-[-8deg] [mask-image:radial-gradient(ellipse_at_center,#000_12%,rgba(0,0,0,0.52)_42%,transparent_68%)] animate-float"
               style={{ animationDuration: "11s" }}
@@ -274,14 +301,14 @@ function ComingSoon() {
             <img
               src="/assets/spoiler-1.png"
               alt=""
-              data-parallax="0.22"
+              data-parallax="0.34"
               data-drift="7"
               className="absolute -right-20 bottom-[8%] w-[34rem] opacity-30 blur-[8px] saturate-[0.6] rotate-[6deg] [mask-image:radial-gradient(ellipse_at_center,#000_20%,transparent_70%)] animate-float"
               style={{ animationDuration: "14s", animationDelay: "-3s" }}
             />
             {/* Arcane halo rings turning slowly behind the subject */}
             <div
-              data-parallax="0.16"
+              data-parallax="0.26"
               className="absolute right-[4%] top-1/2 -translate-y-1/2 h-[42rem] w-[42rem]"
             >
               <div className="halo-ring animate-spin-slow absolute inset-0 opacity-40" />
@@ -291,18 +318,18 @@ function ComingSoon() {
             <img
               src="/assets/spoiler-2.png"
               alt=""
-              data-parallax="0.12"
+              data-parallax="0.2"
               data-drift="4"
               className="absolute right-[2%] top-1/2 -translate-y-1/2 w-[88%] max-w-[54rem] opacity-55 blur-[2px] saturate-[0.85] contrast-[1.05] [mask-image:radial-gradient(ellipse_at_center,#000_38%,transparent_82%)] animate-float"
               style={{ animationDuration: "9s", animationDelay: "-1s" }}
             />
             {/* Sapphire bloom */}
             <div
-              data-parallax="0.18"
+              data-parallax="0.45"
               className="animate-breathe absolute right-[18%] top-1/2 -translate-y-1/2 h-[34rem] w-[34rem] rounded-full bg-[radial-gradient(circle,oklch(0.62_0.22_255/0.35),transparent_70%)] blur-3xl"
             />
             <div
-              data-parallax="0.3"
+              data-parallax="0.45"
               className="animate-breathe absolute right-[8%] top-[20%] h-[18rem] w-[18rem] rounded-full bg-[radial-gradient(circle,oklch(0.7_0.2_250/0.25),transparent_70%)] blur-3xl"
               style={{ animationDelay: "-3s" }}
             />
@@ -325,7 +352,7 @@ function ComingSoon() {
         {/* Left content */}
         <div
           ref={heroReveal}
-          className="view-fade relative z-10 col-span-1 lg:col-span-6 xl:col-span-5 max-w-xl"
+          className="svf relative z-10 col-span-1 lg:col-span-6 xl:col-span-5 max-w-xl"
         >
           <div data-reveal className="flex items-center gap-3">
             <span className="label-line h-px w-10 bg-gradient-to-r from-transparent via-sapphire-glow/60 to-transparent" />
@@ -398,7 +425,7 @@ function ComingSoon() {
         {/* Animated scroll hint */}
         <div
           aria-hidden
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-3"
+          className="scroll-hint absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-3"
         >
           <span className="text-[9px] uppercase tracking-[0.5em] text-muted-foreground/50">
             scroll
@@ -420,11 +447,11 @@ function ComingSoon() {
           aria-hidden
           className="hidden lg:block absolute inset-y-0 left-0 w-[60%] pointer-events-none"
         >
-          <div className="relative h-full w-full overflow-visible">
+          <div className="scene-drift relative h-full w-full overflow-visible">
             <img
               src="/assets/spoiler-1.png"
               alt=""
-              data-parallax="0.35"
+              data-parallax="0.55"
               data-drift="10"
               className="absolute left-[6%] top-[12%] w-[30rem] opacity-25 blur-[6px] saturate-[0.7] rotate-[6deg] [mask-image:radial-gradient(ellipse_at_center,#000_12%,rgba(0,0,0,0.52)_42%,transparent_68%)] animate-float"
               style={{ animationDuration: "12s" }}
@@ -432,14 +459,14 @@ function ComingSoon() {
             <img
               src="/assets/spoiler-3.png"
               alt=""
-              data-parallax="0.22"
+              data-parallax="0.34"
               data-drift="7"
               className="absolute -left-16 bottom-[10%] w-[32rem] opacity-25 blur-[8px] saturate-[0.6] rotate-[-7deg] [mask-image:radial-gradient(ellipse_at_center,#000_10%,rgba(0,0,0,0.5)_38%,transparent_66%)] animate-float"
               style={{ animationDuration: "15s", animationDelay: "-2s" }}
             />
             {/* Arcane halo ring behind the subject */}
             <div
-              data-parallax="0.16"
+              data-parallax="0.26"
               className="absolute left-[6%] top-1/2 -translate-y-1/2 h-[38rem] w-[38rem]"
             >
               <div className="halo-ring animate-spin-reverse absolute inset-0 opacity-30" />
@@ -448,17 +475,17 @@ function ComingSoon() {
             <img
               src="/assets/spoiler-4.png"
               alt=""
-              data-parallax="0.12"
+              data-parallax="0.2"
               data-drift="4"
               className="absolute left-[2%] top-1/2 -translate-y-1/2 w-[88%] max-w-[52rem] opacity-60 blur-[2.5px] saturate-[0.9] contrast-[1.04] [mask-image:radial-gradient(ellipse_at_center,#000_28%,rgba(0,0,0,0.82)_52%,transparent_78%)] animate-float"
               style={{ animationDuration: "10s", animationDelay: "-1s" }}
             />
             <div
-              data-parallax="0.18"
+              data-parallax="0.45"
               className="animate-breathe absolute left-[12%] -bottom-52 h-[42rem] w-[42rem] rounded-full bg-[radial-gradient(circle,oklch(0.62_0.22_255/0.34),transparent_74%)] blur-3xl"
             />
             <div
-              data-parallax="0.28"
+              data-parallax="0.45"
               className="animate-breathe absolute left-[2%] -bottom-36 h-[26rem] w-[26rem] rounded-full bg-[radial-gradient(circle,oklch(0.7_0.2_250/0.22),transparent_76%)] blur-3xl"
               style={{ animationDelay: "-4s" }}
             />
@@ -477,7 +504,7 @@ function ComingSoon() {
         {/* Right content */}
         <div
           ref={aboutReveal}
-          className="view-fade relative z-10 col-span-1 lg:col-span-6 lg:col-start-7 xl:col-span-5 xl:col-start-8 max-w-xl ml-auto"
+          className="svf relative z-10 col-span-1 lg:col-span-6 lg:col-start-7 xl:col-span-5 xl:col-start-8 max-w-xl ml-auto"
         >
           <div data-reveal className="flex items-center gap-3">
             <span className="label-line h-px w-10 bg-gradient-to-r from-transparent via-sapphire-glow/60 to-transparent" />
@@ -489,7 +516,7 @@ function ComingSoon() {
           <h2
             data-reveal
             style={{ "--reveal-delay": "0.15s" } as React.CSSProperties}
-            className="mt-10 text-4xl sm:text-5xl md:text-[3.5rem] leading-[1.02] font-light tracking-[-0.03em] text-foreground/95"
+            className="scrub-wipe mt-10 text-4xl sm:text-5xl md:text-[3.5rem] leading-[1.02] font-light tracking-[-0.03em] text-foreground/95"
           >
             Beyond traditional <span className="text-shimmer font-extralight italic">hosting.</span>
           </h2>
@@ -503,7 +530,7 @@ function ComingSoon() {
             game hosting — evolving into a powerful, scalable, next-generation platform.
           </p>
 
-          <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-px bg-white/5 border-y border-white/5">
+          <div className="svf svf-late mt-12 grid grid-cols-1 sm:grid-cols-3 gap-px bg-white/5 border-y border-white/5">
             {[
               { t: "More Power", d: "Bare-metal performance, tuned for scale." },
               { t: "More Features", d: "A platform built for what comes next." },
@@ -543,7 +570,7 @@ function ComingSoon() {
         {/* Rising ember sparks */}
         <Sparks />
 
-        <div ref={newsletterReveal} className="view-fade relative w-full max-w-6xl">
+        <div ref={newsletterReveal} className="svf relative w-full max-w-6xl">
           <div className="text-center">
             <p
               data-reveal
@@ -554,7 +581,7 @@ function ComingSoon() {
             <h2
               data-reveal
               style={{ "--reveal-delay": "0.15s" } as React.CSSProperties}
-              className="mt-6 text-3xl sm:text-4xl md:text-5xl font-light tracking-tight text-foreground/95"
+              className="scrub-wipe mt-6 text-3xl sm:text-4xl md:text-5xl font-light tracking-tight text-foreground/95"
             >
               Be the first to know.
             </h2>
@@ -573,7 +600,7 @@ function ComingSoon() {
               tilt
               data-reveal
               style={{ "--reveal-delay": "0.4s" } as React.CSSProperties}
-              className="group relative flex flex-col rounded-2xl border border-white/10 bg-white/[0.02] p-8 sm:p-10 backdrop-blur-xl transition hover:border-white/20"
+              className="svf-left group relative flex flex-col rounded-2xl border border-white/10 bg-white/[0.02] p-8 sm:p-10 backdrop-blur-xl transition hover:border-white/20"
             >
               <div className="flex items-center gap-3">
                 <span className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04]">
@@ -615,7 +642,7 @@ function ComingSoon() {
               tilt
               data-reveal
               style={{ "--reveal-delay": "0.5s" } as React.CSSProperties}
-              className="group relative flex flex-col rounded-2xl border border-white/10 bg-gradient-to-br from-[#5865F2]/[0.08] via-white/[0.02] to-sapphire-glow/[0.06] p-8 sm:p-10 backdrop-blur-xl transition hover:border-sapphire-glow/40"
+              className="svf-right group relative flex flex-col rounded-2xl border border-white/10 bg-gradient-to-br from-[#5865F2]/[0.08] via-white/[0.02] to-sapphire-glow/[0.06] p-8 sm:p-10 backdrop-blur-xl transition hover:border-sapphire-glow/40"
             >
               <div
                 aria-hidden

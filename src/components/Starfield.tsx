@@ -115,15 +115,15 @@ export function Starfield() {
       for (const s of stars) {
         // Parallax: deeper stars scroll slower than the page.
         const scroll = window.scrollY || 0;
-        const py = (s.y * height - scroll * s.depth * 0.12) % height;
+        const py = (s.y * height - scroll * s.depth * 0.2) % height;
         const y = py < 0 ? py + height : py;
         const x = s.x * width;
         const tw = reduced ? 0.75 : 0.55 + 0.45 * Math.sin(t * 0.001 * s.speed + s.phase);
         const alpha = (0.25 + 0.6 * tw) * (0.35 + 0.65 * s.depth);
         const [cr, cg, cb] = s.tint;
-        // Warp: while the page scrolls fast, stars smear into short streaks
-        // along the scroll axis — nearer stars stretch further.
-        const stretch = Math.min(Math.abs(warp) * s.depth * 0.55, 26);
+        // Warp: while the page scrolls fast, stars smear into streaks along
+        // the scroll axis — nearer stars stretch further.
+        const stretch = Math.min(Math.abs(warp) * s.depth * 0.9, 44);
         if (stretch > 2) {
           const half = stretch / 2;
           const grad = ctx.createLinearGradient(x, y - half, x, y + half);

@@ -32,7 +32,7 @@ export function useParallax<T extends HTMLElement>() {
       for (const el of els) {
         const speed = parseFloat(el.dataset.parallax ?? "0");
         const drift = parseFloat(el.dataset.drift ?? "0");
-        const y = -scrollP * speed * 120 + driftY * drift;
+        const y = -scrollP * speed * 200 + driftY * drift;
         const x = driftX * drift;
         el.style.translate = `${x.toFixed(1)}px ${y.toFixed(1)}px`;
       }
